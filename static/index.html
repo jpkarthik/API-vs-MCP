@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>API vs MCP | Ticket workbench</title>
+<style>
+:root{color-scheme:light;--ink:#172b4d;--muted:#64748b;--line:#dfe6ef;--blue:#2459d3;--bg:#f4f7fb}
+*{box-sizing:border-box}body{margin:0;color:var(--ink);background:var(--bg);font:15px/1.5 "Segoe UI",Arial,sans-serif}
+.shell{max-width:1440px;margin:auto;padding:34px 24px 55px}h1{margin:0;font-size:30px}h2{margin:0;font-size:20px}p{margin:6px 0 0;color:var(--muted)}
+.intro{margin-bottom:24px}.intro a{color:var(--blue)}.panels{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+.panel{min-width:0;border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:0 5px 18px #16345b0a;overflow:hidden}
+.head{padding:20px 21px 17px;border-bottom:1px solid var(--line)}.body{padding:20px 21px 22px}
+.badge{display:inline-flex;margin-bottom:8px;padding:3px 9px;color:var(--blue);background:#edf3ff;border-radius:99px;font-size:12px;font-weight:700;text-transform:uppercase}
+.badge.purple{color:#6546a5;background:#f2edff}
+label{display:grid;gap:6px;margin-bottom:13px;font-size:13px;font-weight:650}
+input,select,textarea{width:100%;padding:10px 11px;border:1px solid #cbd5e1;border-radius:8px;color:var(--ink);background:#fff;font:inherit}
+textarea{min-height:150px;resize:vertical;font:13px/1.5 Consolas,monospace}textarea.prompt{min-height:104px;font:14px/1.5 "Segoe UI",Arial,sans-serif}
+input:focus,select:focus,textarea:focus{outline:3px solid #2459d31c;border-color:var(--blue)}
+.row{display:grid;grid-template-columns:150px 1fr;gap:10px}.buttons{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 15px}
+button{padding:9px 13px;border:0;border-radius:8px;background:var(--blue);color:#fff;font-weight:650;cursor:pointer}button:hover{filter:brightness(.95)}
+button.secondary,button.preset{border:1px solid var(--line);background:#fff;color:var(--ink)}button.preset{padding:7px 10px;background:#f7f9fd;font-size:12px}
+button:disabled{opacity:.55;cursor:wait}.response-head{display:flex;justify-content:space-between;margin:18px 0 8px;font-size:13px;font-weight:700}
+.response{min-height:190px;max-height:440px;overflow:auto;padding:13px;border:1px solid #202e43;border-radius:9px;background:#111c2b;color:#dce8f7;white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.55 Consolas,monospace}
+.hint{margin:12px 0;padding:11px 12px;background:#f5f7fb;border-radius:8px;color:#53647c;font-size:13px}.hint strong{color:var(--ink)}
+.status{min-height:22px;margin:9px 0;font-size:13px;color:#147d51}.status.error{color:#b42318}
+.flow{margin-top:24px;padding:15px 18px;border:1px solid var(--line);border-radius:11px;background:#fff;color:#53647c;font-size:13px}.flow strong{color:var(--ink)}
+@media(max-width:900px){.panels{grid-template-columns:1fr}}@media(max-width:560px){.shell{padding:23px 13px 40px}.row{grid-template-columns:1fr;gap:0}.head,.body{padding-left:15px;padding-right:15px}}
+</style></head><body><main class="shell">
+<div class="intro"><h1>Support ticket workbench</h1><p>Run the same ticket operations through a direct REST API call or through Groq and MCP.</p><p><a href="/docs" target="_blank" rel="noreferrer">Open API docs</a> · Both partitions use the same ticket database.</p></div>
+<div class="panels">
+<section class="panel"><div class="head"><h2>Direct API testing</h2><p>Use this panel to send HTTP requests straight to the ticket REST API. Choose a method and endpoint, and include JSON when the operation needs a request body. This path does not use Groq or MCP.</p></div>
+<div class="body">
+<div class="row"><label>HTTP method<select id="apiMethod"><option>GET</option><option>POST</option><option>PATCH</option></select></label><label>Endpoint path<input id="apiPath" value="/tickets" spellcheck="false"></label></div>
+<label>JSON request body<textarea id="apiBody" spellcheck="false">{
+  "customer_name": "Ravi Kumar",
+  "subject": "Cannot download invoice",
+  "description": "The download button returns an error.",
+  "priority": "normal"
+}</textarea></label>
+<div class="buttons"><button id="sendApi" type="button">Send API request</button>
+<button class="preset" data-method="GET" data-path="/tickets" data-body="" type="button">List all</button>
+<button class="preset" data-method="GET" data-path="/tickets?status=open" data-body="" type="button">Filter open</button>
+<button class="preset" data-method="POST" data-path="/tickets" data-body='{"customer_name":"Ravi Kumar","subject":"Cannot download invoice","description":"The download button returns an error.","priority":"normal"}' type="button">Create sample</button></div>
+<div id="apiStatus" class="status" role="status"></div><div class="response-head"><span>HTTP response</span><span id="apiCode"></span></div>
+<pre id="apiResponse" class="response">Choose a request above, or edit the method, path, and body.</pre>
+<div class="hint"><strong>Try it:</strong> create a ticket here, note its ID, then retrieve or update that same ID in the MCP panel.</div>
+</div></section>
+<section class="panel"><div class="head"><h2>MCP testing</h2><p>Enter a natural language request for Groq. The app discovers ticket tools from the MCP server and runs the tool Groq selects. The MCP server uses the same REST API and database shown in the Direct API panel.</p></div>
+<div class="body"><label>Instruction to Groq<textarea class="prompt" id="mcpPrompt" placeholder="For example: List open tickets, or close ticket 3."></textarea></label>
+<div class="buttons"><button id="sendMcp" type="button">Run through MCP</button>
+<button class="preset" data-prompt="List all support tickets." type="button">List tickets</button>
+<button class="preset" data-prompt="List tickets with status in_progress." type="button">Filter in progress</button></div>
+<div id="mcpStatus" class="status" role="status"></div><div class="response-head"><span>Discovered tools, tool calls, and answer</span></div>
+<pre id="mcpResponse" class="response">Enter an instruction to see which MCP tool Groq selects and what it returns.</pre>
+<div class="hint"><strong>Try it:</strong> “Show ticket ID 1” or “Set ticket 1 to closed.” Calls and results appear above.</div>
+</div></section></div>
+<div class="flow"><strong>How to compare:</strong> Direct API mode sends your chosen HTTP method and endpoint to FastAPI. MCP mode sends your natural-language request to Groq, discovers MCP tools, and runs the selected tool. Both ultimately read or change the same SQLite ticket rows.</div>
+</main>
+<script>
+const methodEl=document.getElementById("apiMethod");
+const pathEl=document.getElementById("apiPath");
+const bodyEl=document.getElementById("apiBody");
+async function readResponse(response){const text=await response.text();if(!text)return null;try{return JSON.parse(text)}catch(_){return text}}
+document.getElementById("sendApi").addEventListener("click",async()=>{
+ const button=document.getElementById("sendApi"),status=document.getElementById("apiStatus"),code=document.getElementById("apiCode");
+ const method=methodEl.value,path=pathEl.value.trim();button.disabled=true;status.className="status";status.textContent="Sending request...";code.textContent="";
+ try{
+  if(!path.startsWith("/")||path.startsWith("//"))throw new Error("Path must start with one / and stay on this API.");
+  const options={method,headers:{}};
+  if(method!=="GET"){options.headers["Content-Type"]="application/json";options.body=bodyEl.value.trim()||"{}";JSON.parse(options.body)}
+  const response=await fetch(path,options),payload=await readResponse(response);
+  code.textContent="HTTP "+response.status;
+  document.getElementById("apiResponse").textContent=typeof payload==="string"?payload:JSON.stringify(payload,null,2);
+  status.textContent=response.ok?"Request completed.":"The API returned an error.";if(!response.ok)status.classList.add("error");
+ }catch(error){status.textContent=error.message;status.classList.add("error");document.getElementById("apiResponse").textContent="No successful response."}
+ finally{button.disabled=false}
+});
+document.querySelectorAll("button.preset[data-method]").forEach(button=>button.addEventListener("click",()=>{
+ methodEl.value=button.dataset.method;pathEl.value=button.dataset.path;
+ bodyEl.value=button.dataset.body?JSON.stringify(JSON.parse(button.dataset.body),null,2):"";
+}));
+document.getElementById("sendMcp").addEventListener("click",async()=>{
+ const button=document.getElementById("sendMcp"),status=document.getElementById("mcpStatus");
+ const prompt=document.getElementById("mcpPrompt").value.trim();
+ if(!prompt){status.textContent="Enter an instruction first.";status.className="status error";return}
+ button.disabled=true;status.className="status";status.textContent="Groq and the MCP server are processing...";
+ document.getElementById("mcpResponse").textContent="";
+ try{
+  const response=await fetch("/mcp/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt})});
+  const payload=await readResponse(response);
+  if(!response.ok)throw new Error(payload&&payload.detail?payload.detail:"HTTP "+response.status);
+  document.getElementById("mcpResponse").textContent=JSON.stringify(payload,null,2);status.textContent="MCP request completed.";
+ }catch(error){status.textContent=error.message;status.className="status error";document.getElementById("mcpResponse").textContent="Request failed. Check the API server and GROQ_API_KEY in .env."}
+ finally{button.disabled=false}
+});
+document.querySelectorAll("button.preset[data-prompt]").forEach(button=>button.addEventListener("click",()=>{
+ document.getElementById("mcpPrompt").value=button.dataset.prompt;
+}));
+</script></body></html>
+
