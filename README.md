@@ -40,7 +40,7 @@ cd D:\002_APIvsMCP
 
 Leave Terminal 1 running. Open http://127.0.0.1:8000/docs. Startup creates tickets.db and its tickets table automatically.
 
-Open the two-partition workbench at http://127.0.0.1:8000/ui. The Direct API panel lets you choose an HTTP method, endpoint, and JSON body. The MCP panel sends a prompt to Groq, displays discovered tools and calls, and invokes the local MCP server. Both panels use the same API and SQLite data.
+Open the two-panel workbench at http://127.0.0.1:8000/ui. The Direct API panel lets you choose an HTTP method, endpoint, and JSON body. The MCP panel sends a prompt to Groq, displays discovered tools and calls, and invokes the local MCP server. Both panels use the same API and SQLite data.
 
 ### 2. Make a manual REST call — Terminal 2
 
@@ -144,4 +144,5 @@ Troubleshooting:
 - To reset demo data, stop the API and remove tickets.db. It is recreated on next startup.
 
 References: [Groq local tool calling](https://console.groq.com/docs/tool-use/local-tool-calling), [official MCP Python SDK](https://py.sdk.modelcontextprotocol.io/).
+
 
